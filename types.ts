@@ -59,3 +59,64 @@ export enum Platform {
   LINKEDIN = 'linkedin',
   X = 'x'
 }
+
+// Report Analytics Types
+export interface ReportView {
+  id: string;
+  reportId: string;
+  reportName: string;
+  viewedBy: string;
+  viewedAt: Date;
+  duration: number;
+  device: 'desktop' | 'mobile' | 'tablet';
+}
+
+export interface ReportDownload {
+  id: string;
+  reportId: string;
+  reportName: string;
+  format: 'pdf' | 'excel' | 'csv' | 'json';
+  downloadedBy: string;
+  downloadedAt: Date;
+  fileSize: number;
+}
+
+export interface MetricPopularity {
+  metricName: string;
+  viewCount: number;
+  includeCount: number;
+  avgValue: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
+export interface ReportTemplate {
+  id: string;
+  name: string;
+  description: string;
+  usageCount: number;
+  lastUsed: Date;
+  avgGenerationTime: number;
+  metrics: string[];
+  category: 'performance' | 'engagement' | 'financial' | 'custom';
+}
+
+export interface ReportEngagement {
+  reportId: string;
+  reportName: string;
+  totalViews: number;
+  uniqueViewers: number;
+  totalDownloads: number;
+  avgViewDuration: number;
+  shareCount: number;
+  commentCount: number;
+  lastActivity: Date;
+}
+
+export interface UsageInsight {
+  type: 'trend' | 'anomaly' | 'recommendation';
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  timestamp: Date;
+  data?: Record<string, any>;
+}

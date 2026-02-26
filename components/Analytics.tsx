@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from './ui/Card';
 import { ViewProps } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -28,6 +28,8 @@ const ageData = [
 const COLORS = ['#3b82f6', '#14b8a6', '#a855f7', '#fb923c'];
 
 export const Analytics: React.FC<ViewProps> = () => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'wealth'>('overview');
+
   const handleExport = () => {
     console.log("Downloading report as PDF...");
     alert("Downloading report as PDF... (Check console for details)");
@@ -36,7 +38,31 @@ export const Analytics: React.FC<ViewProps> = () => {
   return (
     <div className="p-7 space-y-7 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Detailed Analytics</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl font-bold text-white">Detailed Analytics</h2>
+          <div className="flex gap-2 bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'overview'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('wealth')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'wealth'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Wealth Analytics
+            </button>
+          </div>
+        </div>
         <div className="flex gap-4">
            <button 
              onClick={handleExport}
@@ -47,6 +73,11 @@ export const Analytics: React.FC<ViewProps> = () => {
            </button>
         </div>
       </div>
+
+      {activeTab === 'wealth' ? (
+        <AudienceWealthAnalytics />
+      ) : (
+        <>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="lg:col-span-2">
@@ -160,6 +191,8 @@ export const Analytics: React.FC<ViewProps> = () => {
            </div>
         </Card>
       </div>
+      </>
+      )}
     </div>
   );
 };

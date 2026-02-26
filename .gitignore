@@ -6,16 +6,36 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# Dependencies
 node_modules
+
+# Build outputs
 dist
 dist-ssr
 dist-electron
 out
 release
+
+# Environment files
 *.local
+.env.local
+.env.*.local
+
+# Test accounts (contains secrets)
+test-accounts.json
+
+# Coverage reports
+coverage
+.nyc_output
+
+# Test results
+test-results
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -23,6 +43,11 @@ release
 *.njsproj
 *.sln
 *.sw?
+
 # Project Tracking
 tasks.md
 task.md
+# Test coverage
+coverage
+.nyc_output
+*.lcov

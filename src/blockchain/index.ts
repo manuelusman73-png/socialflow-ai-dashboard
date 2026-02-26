@@ -1,10 +1,10 @@
 /**
  * Blockchain Module Entry Point
- * Exports all wallet-related types, services, and providers
+ * Exports wallet services, smart contract services, and event parsing
  */
 
-// Types
-export {
+// Wallet Types & Services
+export type {
   NetworkType,
   WalletProvider,
   WalletProviderMetadata,
@@ -16,9 +16,18 @@ export {
   WalletException
 } from './types/wallet';
 
-// Services
 export { WalletService, walletService } from './services/WalletService';
-
-// Providers
 export { FreighterProvider } from './services/providers/FreighterProvider';
 export { AlbedoProvider } from './services/providers/AlbedoProvider';
+
+// Smart Contract & Soroban Services
+export { SmartContractService, sorobanService } from './services/SmartContractService';
+export type {
+  ContractInvocationParams,
+  ContractSimulationResult,
+  ContractInvocationResult,
+  WasmDeploymentParams,
+  WasmDeploymentResult,
+  SorobanConfig,
+  ContractCallType,
+} from './types/soroban';

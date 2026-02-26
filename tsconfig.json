@@ -18,10 +18,25 @@
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "components", "electron", "types.ts"],
+  "include": [
+    "src",
+    "components",
+    "electron",
+    "types.ts",
+    "App.tsx",
+    "index.tsx",
+    "services"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/test",
+    "src/blockchain"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

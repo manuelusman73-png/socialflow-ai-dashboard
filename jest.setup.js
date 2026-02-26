@@ -1,4 +1,5 @@
 // Jest setup file for additional configuration
+import '@testing-library/jest-dom';
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -14,6 +15,23 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  takeRecords() { return []; }
+  unobserve() {}
+};
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+};
 
 // Suppress console errors in tests (optional)
 global.console = {

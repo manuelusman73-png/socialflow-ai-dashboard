@@ -16,14 +16,14 @@ export function validate(schema: ZodSchema, target: Target = 'body') {
       return;
     }
     // Replace with the parsed value so controllers get typed, coerced data
-    (req as Record<string, unknown>)[target] = result.data;
+    (req as unknown as Record<string, unknown>)[target] = result.data;
     next();
   };
 }
 
 function formatErrors(error: ZodError) {
-  return error.errors.map(({ path, message }) => ({
-    field: path.join('.'),
-    message,
+  return error.issues.map((issue) => ({
+    field: issue.path.map(String).join('.'),
+    message: issue.message,
   }));
 }

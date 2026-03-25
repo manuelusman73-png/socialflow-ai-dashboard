@@ -43,6 +43,9 @@ app.use('/api/youtube', youtubeRoutes);
 import facebookRoutes from './routes/facebook';
 app.use('/api/facebook', facebookRoutes);
 
+import exportsRoutes from './routes/exports';
+app.use('/api/exports', exportsRoutes);
+
 // 404 handler - must be after all routes
 app.use(notFoundHandler);
 

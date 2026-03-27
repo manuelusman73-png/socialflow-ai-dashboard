@@ -120,3 +120,44 @@ groups:
         annotations:
           summary: "High SLI breach rate for {{ $labels.category }}"
           description: "{{ $value | humanize }} breaches/s in category {{ $labels.category }}."
+
+  - name: nodejs_runtime
+    interval: 30s
+    rules:
+      - alert: EventLoopLagHigh
+        expr: nodejs_event_loop_lag_ms > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js event loop lag > 100ms"
+          description: "Event loop lag is {{ $value | humanize }}ms — the process may be CPU-bound."
+
+      - alert: EventLoopLagCritical
+        expr: nodejs_event_loop_lag_ms > 500
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js event loop lag > 500ms"
+          description: "Event loop lag is {{ $value | humanize }}ms — requests are likely timing out."
+
+      - alert: HeapUsageHigh
+        expr: |
+          nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js heap usage > 85%"
+          description: "Heap is {{ $value | humanizePercentage }} full — risk of OOM."
+
+      - alert: HeapUsageCritical
+        expr: |
+          nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js heap usage > 95%"
+          description: "Heap is {{ $value | humanizePercentage }} full — OOM imminent."

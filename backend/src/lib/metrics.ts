@@ -1,8 +1,28 @@
-import { Registry, Histogram, Counter, collectDefaultMetrics } from 'prom-client';
+import { Registry, Histogram, Counter, Gauge, collectDefaultMetrics } from 'prom-client';
 
 export const register = new Registry();
 
 collectDefaultMetrics({ register });
+
+/**
+ * Event loop lag gauge — sampled every 500 ms.
+ * Measures the delta between when a setTimeout(fn, 0) was scheduled and when it fired.
+ * High values (>100 ms) indicate the event loop is blocked.
+ */
+export const eventLoopLag = new Gauge({
+  name: 'nodejs_event_loop_lag_ms',
+  help: 'Current event loop lag in milliseconds',
+  registers: [register],
+});
+
+(function sampleEventLoopLag() {
+  const interval = setInterval(() => {
+    const start = Date.now();
+    setImmediate(() => eventLoopLag.set(Date.now() - start));
+  }, 500);
+  // Allow the process to exit cleanly even if this timer is still running
+  interval.unref();
+})();
 
 /**
  * SLI buckets (ms) covering health (<200ms p95), general (<500ms p95), AI (<2s p95).

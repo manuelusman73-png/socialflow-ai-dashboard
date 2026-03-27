@@ -7,6 +7,7 @@ import { getBackendPort } from './config/runtime';
 import { startDataPruningJob, stopDataPruningJob } from './jobs/dataPruningJob';
 import { startYouTubeSyncJob, stopYouTubeSyncJob } from './jobs/youtubeSyncJob';
 import { startTikTokVideoWorker } from './jobs/tiktokVideoJob';
+import { startTwitterWebhookWorker } from './queues/twitterWebhookQueue';
 import { startWorkerMonitor, stopWorkerMonitor } from './monitoring/workerMonitorInstance';
 import { startHealthMonitoringJob, stopHealthMonitoringJob } from './jobs/healthMonitoringJob';
 import { initializeHealthMonitoring } from './monitoring/healthMonitoringInstance';
@@ -20,6 +21,7 @@ const PORT = getBackendPort();
 
 let serverInstance: Server | null = null;
 let webhookWorker: Worker | null = null;
+let twitterWebhookWorker: Worker | null = null;
 let isShuttingDown = false;
 
 /**
@@ -84,6 +86,16 @@ const gracefulShutdown = async (signal: string, exitCode: number = 0): Promise<v
       logger.info('Webhook worker stopped');
     } catch (error) {
       logger.error('Failed to stop webhook worker', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    // Stop Twitter webhook worker
+    try {
+      if (twitterWebhookWorker) await twitterWebhookWorker.close();
+      logger.info('Twitter webhook worker stopped');
+    } catch (error) {
+      logger.error('Failed to stop Twitter webhook worker', {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -250,6 +262,16 @@ const bootstrap = async (): Promise<void> => {
       logger.info('TikTok video worker started');
     } catch (error) {
       logger.error('Failed to start TikTok video worker', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    // Start Twitter webhook event worker
+    try {
+      twitterWebhookWorker = startTwitterWebhookWorker();
+      logger.info('Twitter webhook worker started');
+    } catch (error) {
+      logger.error('Failed to start Twitter webhook worker', {
         error: error instanceof Error ? error.message : String(error),
       });
     }

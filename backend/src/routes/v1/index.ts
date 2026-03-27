@@ -24,6 +24,7 @@ import translationRoutes  from '../translation';
 import ttsRoutes          from '../tts';
 import videoRoutes        from '../video';
 import webhookRoutes      from '../webhooks';
+import twitterWebhookRoutes from '../twitter-webhook';
 import youtubeRoutes      from '../youtube';
 
 const router = Router();
@@ -68,6 +69,8 @@ router.use('/roles',         generalLimiter, rolesRoutes);
 router.use('/tiktok',        generalLimiter, tiktokRoutes);
 router.use('/video',         generalLimiter, videoRoutes);
 router.use('/webhooks',      generalLimiter, webhookRoutes);
+// Twitter Account Activity API — no auth middleware, secured via HMAC signature
+router.use('/webhooks/twitter', twitterWebhookRoutes);
 router.use('/youtube',       generalLimiter, youtubeRoutes);
 
 export default router;

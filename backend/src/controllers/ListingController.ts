@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { listingService } from '../services/ListingService';
+import { parsePageLimit, buildPageResponse } from '../utils/pagination';
 
 export const toggleListingVisibility = async (req: Request, res: Response) => {
   try {
@@ -31,13 +32,11 @@ export const toggleListingVisibility = async (req: Request, res: Response) => {
 
 export const searchListings = async (req: Request, res: Response) => {
   try {
-    const query = req.query.q as string || '';
-    const listings = await listingService.searchListings(query);
+    const query  = (req.query.q as string) || '';
+    const params = parsePageLimit(req);
+    const { data, total } = await listingService.searchListings(query, params);
 
-    res.json({
-      success: true,
-      data: listings
-    });
+    res.json(buildPageResponse(req, data, total, params));
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

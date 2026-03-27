@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { randomUUID } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { parsePageLimit, toSkipTake, buildPageResponse } from '../utils/pagination';
 
 /** POST /api/organizations — create a new org, caller becomes owner */
 export async function createOrganization(req: AuthRequest, res: Response): Promise<void> {
@@ -30,12 +31,16 @@ export async function createOrganization(req: AuthRequest, res: Response): Promi
 
 /** GET /api/organizations — list orgs the caller belongs to */
 export async function listOrganizations(req: AuthRequest, res: Response): Promise<void> {
-  const memberships = await prisma.organizationMember.findMany({
-    where: { userId: req.userId! },
-    include: { organization: true },
-  });
+  const params = parsePageLimit(req);
+  const where  = { userId: req.userId! };
 
-  res.json(memberships.map((m: typeof memberships[number]) => ({ ...m.organization, role: m.role })));
+  const [total, memberships] = await Promise.all([
+    prisma.organizationMember.count({ where }),
+    prisma.organizationMember.findMany({ where, include: { organization: true }, ...toSkipTake(params) }),
+  ]);
+
+  const data = memberships.map((m: typeof memberships[number]) => ({ ...m.organization, role: m.role }));
+  res.json(buildPageResponse(req, data, total, params));
 }
 
 /** GET /api/organizations/:orgId — get a single org (must be a member) */

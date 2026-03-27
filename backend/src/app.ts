@@ -16,8 +16,10 @@ const app: Application = express();
 
 // ── Core middleware ───────────────────────────────────────────────────────────
 
-app.use(helmet());
+// Response compression (Gzip/Brotli) — before body parsing so all responses are eligible
 app.use(compressionMiddleware);
+
+// CORS — allow EventSource connections
 app.use(cors());
 app.use(requestIdMiddleware);
 app.use(express.json());

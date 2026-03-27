@@ -1,17 +1,22 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware';
 import { AuditLogStore } from '../models/AuditLog';
+import { parsePageLimit, buildPageResponse } from '../utils/pagination';
 
 const router = Router();
 
 /**
  * GET /api/audit
  * Returns the most recent audit log entries (admin view).
- * Query: limit (default 100, max 500)
+ * Query: page (default 1), limit (default 20, max 100)
  */
 router.get('/', authMiddleware, (req: Request, res: Response) => {
-  const limit = Math.min(Number(req.query.limit) || 100, 500);
-  return res.json(AuditLogStore.recent(limit));
+  const params  = parsePageLimit(req);
+  const all     = AuditLogStore.recent(500);
+  const total   = all.length;
+  const start   = (params.page - 1) * params.limit;
+  const data    = all.slice(start, start + params.limit);
+  return res.json(buildPageResponse(req, data, total, params));
 });
 
 /**
@@ -19,8 +24,12 @@ router.get('/', authMiddleware, (req: Request, res: Response) => {
  * Returns audit log entries for the authenticated user.
  */
 router.get('/me', authMiddleware, (req: AuthRequest, res: Response) => {
-  const limit = Math.min(Number(req.query.limit) || 100, 500);
-  return res.json(AuditLogStore.forActor(req.userId!, limit));
+  const params  = parsePageLimit(req);
+  const all     = AuditLogStore.forActor(req.userId!, 500);
+  const total   = all.length;
+  const start   = (params.page - 1) * params.limit;
+  const data    = all.slice(start, start + params.limit);
+  return res.json(buildPageResponse(req, data, total, params));
 });
 
 /**

@@ -5,16 +5,21 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { NotFoundError, ForbiddenError } from '../lib/errors';
 import { dispatchEvent } from '../services/WebhookDispatcher';
 import { CreateWebhookInput, UpdateWebhookInput } from '../schemas/webhooks';
+import { parsePageLimit, toSkipTake, buildPageResponse } from '../utils/pagination';
 
 // ── List subscriptions ────────────────────────────────────────────────────────
 export async function listWebhooks(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const subs = await prisma.webhookSubscription.findMany({
-      where: { userId: req.userId! },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, url: true, events: true, isActive: true, createdAt: true, updatedAt: true },
-    });
-    res.json(subs);
+    const params = parsePageLimit(req);
+    const where  = { userId: req.userId! };
+    const select = { id: true, url: true, events: true, isActive: true, createdAt: true, updatedAt: true };
+
+    const [total, subs] = await Promise.all([
+      prisma.webhookSubscription.count({ where }),
+      prisma.webhookSubscription.findMany({ where, orderBy: { createdAt: 'desc' }, select, ...toSkipTake(params) }),
+    ]);
+
+    res.json(buildPageResponse(req, subs, total, params));
   } catch (err) {
     next(err);
   }
@@ -110,17 +115,20 @@ export async function testWebhook(req: AuthRequest, res: Response, next: NextFun
 export async function listDeliveries(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     await findOwned(req.params.id, req.userId!);
-    const deliveries = await prisma.webhookDelivery.findMany({
-      where: { subscriptionId: req.params.id },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true, eventType: true, status: true,
-        attempts: true, responseStatus: true, errorMessage: true,
-        createdAt: true, nextRetryAt: true,
-      },
-    });
-    res.json(deliveries);
+    const params = parsePageLimit(req);
+    const where  = { subscriptionId: req.params.id };
+    const select = {
+      id: true, eventType: true, status: true,
+      attempts: true, responseStatus: true, errorMessage: true,
+      createdAt: true, nextRetryAt: true,
+    };
+
+    const [total, deliveries] = await Promise.all([
+      prisma.webhookDelivery.count({ where }),
+      prisma.webhookDelivery.findMany({ where, orderBy: { createdAt: 'desc' }, select, ...toSkipTake(params) }),
+    ]);
+
+    res.json(buildPageResponse(req, deliveries, total, params));
   } catch (err) {
     next(err);
   }

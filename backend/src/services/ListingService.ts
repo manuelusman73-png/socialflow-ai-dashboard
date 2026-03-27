@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { PageLimitParams, toSkipTake } from '../utils/pagination';
 
 const prisma = new PrismaClient();
 
@@ -30,21 +31,26 @@ export class ListingService {
   /**
    * Search listings, excluding hidden ones
    * @param query Search string
+   * @param params Page/limit pagination params
    */
-  async searchListings(query: string = '') {
+  async searchListings(query: string = '', params: PageLimitParams): Promise<{ data: any[]; total: number }> {
     const q = query.trim();
-    
-    return prisma.listing.findMany({
-      where: {
-        isActive: true, // Hidden listings excluded from search
-        ...(q ? {
-          OR: [
-            { title: { contains: q, mode: 'insensitive' } },
-            { description: { contains: q, mode: 'insensitive' } }
-          ]
-        } : {})
-      }
-    });
+    const where = {
+      isActive: true,
+      ...(q ? {
+        OR: [
+          { title: { contains: q, mode: 'insensitive' as const } },
+          { description: { contains: q, mode: 'insensitive' as const } },
+        ],
+      } : {}),
+    };
+
+    const [total, data] = await Promise.all([
+      prisma.listing.count({ where }),
+      prisma.listing.findMany({ where, ...toSkipTake(params) }),
+    ]);
+
+    return { data, total };
   }
 }
 

@@ -42,6 +42,21 @@ function getSensitivity(): SensitivityLevel {
   return 'medium';
 }
 
+/**
+ * MODERATION_MODE controls behaviour when the provider is unavailable
+ * (missing API key, timeout, or malformed response):
+ *
+ *   fail-open   (default) — bypass moderation and allow the content through.
+ *                           Logs a warning. Use when availability > safety.
+ *   fail-closed           — block the content and throw.
+ *                           Use when safety > availability.
+ */
+function getMode(): 'fail-open' | 'fail-closed' {
+  return process.env.MODERATION_MODE === 'fail-closed' ? 'fail-closed' : 'fail-open';
+}
+
+const BYPASS_RESULT: ModerationResult = { flagged: false, blocked: false, categories: {}, scores: {} };
+
 export const ModerationService = {
   isConfigured(): boolean {
     return !!process.env.OPENAI_API_KEY;
@@ -49,12 +64,20 @@ export const ModerationService = {
 
   /**
    * Moderate content using the OpenAI Moderation API.
-   * Returns a safe pass-through result if the API is not configured.
+   *
+   * When the provider is unavailable the behaviour depends on MODERATION_MODE:
+   *   fail-open   — returns a clean pass-through result (default)
+   *   fail-closed — throws so the caller can block the content
    */
   async moderate(text: string): Promise<ModerationResult> {
     if (!this.isConfigured()) {
-      logger.warn('ModerationService: OPENAI_API_KEY not set — skipping moderation');
-      return { flagged: false, blocked: false, categories: {}, scores: {} };
+      const msg = 'ModerationService: OPENAI_API_KEY not set — skipping moderation';
+      if (getMode() === 'fail-closed') {
+        logger.error(msg);
+        throw new Error('Moderation unavailable: OPENAI_API_KEY not set');
+      }
+      logger.warn(msg);
+      return BYPASS_RESULT;
     }
 
     const response = await fetch('https://api.openai.com/v1/moderations', {
@@ -64,7 +87,17 @@ export const ModerationService = {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({ input: text }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch((err: unknown) => {
+      const isTimeout = err instanceof Error && err.name === 'TimeoutError';
+      const msg = isTimeout ? 'Moderation API timeout' : 'Moderation API unreachable';
+      logger.error(msg, { error: err instanceof Error ? err.message : String(err) });
+      if (getMode() === 'fail-closed') throw new Error(msg);
+      logger.warn(`${msg} — failing open`);
+      return null;
     });
+
+    if (response === null) return BYPASS_RESULT;
 
     if (!response.ok) {
       const body = await response.text();
@@ -72,13 +105,24 @@ export const ModerationService = {
       throw new Error(`Moderation API returned ${response.status}`);
     }
 
-    const data = (await response.json()) as {
+    let data: {
       results: Array<{
         flagged: boolean;
         categories: Record<string, boolean>;
         category_scores: Record<string, number>;
       }>;
     };
+
+    try {
+      data = (await response.json()) as typeof data;
+      if (!Array.isArray(data?.results) || !data.results[0]) throw new Error('unexpected shape');
+    } catch {
+      const msg = 'Moderation API returned malformed response';
+      logger.error(msg);
+      if (getMode() === 'fail-closed') throw new Error(msg);
+      logger.warn(`${msg} — failing open`);
+      return BYPASS_RESULT;
+    }
 
     const result = data.results[0];
     const sensitivity = getSensitivity();
